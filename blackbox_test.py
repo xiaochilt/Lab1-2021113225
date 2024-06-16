@@ -1,6 +1,6 @@
 import pytest
 import networkx as nx
-from lab1 import build_oriented_graph, queryBridgeWords  # 确保从正确的模块导入函数
+from lab1_gui import build_oriented_graph, queryBridgeWords  # 确保从正确的模块导入函数
 
 
 def test_words_not_in_graph():
