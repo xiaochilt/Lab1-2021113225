@@ -1,15 +1,26 @@
+# lab1.py
+"""Lab1 模块提供了文本处理和图论相关的一系列功能。"""
+
 import random
 import re
-import networkx as nx
-import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
 import tkinter as tk
 from tkinter import filedialog
+import networkx as nx
+import matplotlib.pyplot as plt
 
-global oriented_graph  # 声明全局变量
+oriented_graph = {}
 
 
 def preprocess_text(text):
+    """对输入文本进行预处理，包括去除标点符号、转换为小写和替换多余空格。
+
+    参数:
+        text (str): 需要预处理的原始文本字符串。
+
+    返回:
+        str: 预处理后的文本字符串。
+    """
     # 将文本中的标点符号和非字母字符替换为空格
     cleaned_text = re.sub(r'[^a-zA-Z\s]', ' ', text)
     # 将所有字符转换为小写
@@ -22,6 +33,14 @@ def preprocess_text(text):
 
 
 def build_oriented_graph(text):
+    """根据预处理后的文本构建一个有向图，图中的节点是单词，边表示单词之间的先后顺序。
+
+       参数:
+           text (str): 预处理后的文本字符串。
+
+       返回:
+           dict: 表示有向图的字典，键是单词，值是另一个字典，记录了该单词后面跟随的单词及其权重。
+       """
     # 将文本分割成单词列表
     words = text.split()
     # 创建一个字典来存储单词的相邻关系和权重
@@ -37,8 +56,12 @@ def build_oriented_graph(text):
     return graph
 
 
-
 def showDirectedGraph(graph):
+    """展示给定有向图的可视化。
+
+    参数:
+        graph (dict): 表示有向图的字典。
+    """
     G = nx.DiGraph()
 
     # 添加节点和边
@@ -57,8 +80,17 @@ def showDirectedGraph(graph):
     plt.show()
 
 
-
 def queryBridgeWords(graph, word1, word2):
+    """查询两个词之间的桥接词，即那些在词1之后且在词2之前出现的词。
+
+    参数:
+        graph (dict): 表示有向图的字典。
+        word1 (str): 第一个词。
+        word2 (str): 第二个词。
+
+    返回:
+        set: 两个词之间的桥接词集合。
+    """
     # 检查word1和word2是否存在于图中
     if word1 not in graph or word2 not in graph:
         # 如果任一词不在图中，返回特定的信息
@@ -78,6 +110,15 @@ def queryBridgeWords(graph, word1, word2):
 
 
 def generateNewText(graph, inputText):
+    """根据给定的有向图和输入文本生成新的文本，可能会在某些词之间插入桥接词。
+
+    参数:
+        graph (dict): 表示有向图的字典。
+        input_text (str): 输入的文本字符串。
+
+    返回:
+        str: 生成的新文本字符串。
+    """
     processed_text = preprocess_text(inputText)
     words = processed_text.split()
     new_text = []
@@ -96,7 +137,8 @@ def generateNewText(graph, inputText):
             new_text.append(current_word)
         else:
             # 如果存在桥接词
-            bridge_word = random.choice(list(bridge_words))  # 确保bridge_words是列表形式
+            bridge_word = random.choice(
+                list(bridge_words))  # 确保bridge_words是列表形式
             new_text.extend([current_word, bridge_word])
 
     new_text.append(words[-1])  # 添加最后一个词
@@ -105,6 +147,16 @@ def generateNewText(graph, inputText):
 
 
 def calcShortestPath(graph, word1, word2):
+    """计算有向图中两个词之间的最短路径。
+
+    参数:
+        graph (dict): 表示有向图的字典。
+        word1 (str): 起始词。
+        word2 (str): 目标词。
+
+    返回:
+        list: 从词1到词2的最短路径上的词的列表。
+    """
     # dijkstra算法找到最短距离
     dist_list = {}
     pre_nodes = {}
@@ -129,25 +181,20 @@ def calcShortestPath(graph, word1, word2):
                 min_dist = dist
                 visited_nodes.append(min_dist_node)
                 break
-        try:
-            for node in graph[min_dist_node].keys():
-                if dist_list[node] >= min_dist + 1:
-                    dist_list[node] = min_dist + 1
-                    pre_nodes[node] = min_dist_node
-        except:
-            pass
+        for node in graph[min_dist_node].keys():
+            if dist_list[node] >= min_dist + 1:
+                dist_list[node] = min_dist + 1
+                pre_nodes[node] = min_dist_node
+
     # 生成最短路径
     shortest_path = []
-    try:
-        shortest_path.insert(0, word2)
-        pre_node = pre_nodes[word2]
-        while True:
-            shortest_path.insert(0, pre_node)
-            if pre_node == word1:
-                break
-            pre_node = pre_nodes[pre_node]
-    except:
-        pass
+    shortest_path.insert(0, word2)
+    pre_node = pre_nodes[word2]
+    while True:
+        shortest_path.insert(0, pre_node)
+        if pre_node == word1:
+            break
+        pre_node = pre_nodes[pre_node]
 
     # 画图
     G = nx.DiGraph()
@@ -157,19 +204,33 @@ def calcShortestPath(graph, word1, word2):
             G.add_edge(word, neighbor, weight=weight)
     # 绘制有向图
     pos = nx.planar_layout(G)
-    nx.draw(G, pos, with_labels=True, node_color='lightgray', edge_color='lightgray')
+    nx.draw(
+        G,
+        pos,
+        with_labels=True,
+        node_color='lightgray',
+        edge_color='lightgray')
     nx.draw_networkx_nodes(G, pos, nodelist=shortest_path, node_color='blue')
-    nx.draw_networkx_edges(G, pos, edgelist=[(u, v) for u, v in zip(shortest_path, shortest_path[1:])],
+    nx.draw_networkx_edges(G, pos, edgelist=[set(zip(shortest_path, shortest_path[1:]))],
                            edge_color='red', width=2)
     labels = nx.get_edge_attributes(G, 'weight')
     nx.draw_networkx_edge_labels(G, pos,
-                                 edge_labels={(u, v): labels[u, v] for u, v in zip(shortest_path, shortest_path[1:])})
+                                 edge_labels={(u, v): labels[u, v] for u, v in
+                                              zip(shortest_path, shortest_path[1:])})
     plt.show()
 
     return shortest_path
 
 
 def randomWalk(graph):
+    """在有向图上执行随机游走，并返回访问的节点序列。
+
+    参数:
+        graph (dict): 表示有向图的字典。
+
+    返回:
+        list: 随机游走访问的节点序列。
+    """
     visited_nodes = []
     visited_edges = []
     current_node = random.choice(list(graph.keys()))
@@ -188,10 +249,18 @@ def randomWalk(graph):
 
 
 def save_walk_to_file(walk, filename="random_walk.txt"):
+    """将随机游走的结果保存到文件中。
+
+    参数:
+        walk (list): 随机游走得到的节点序列。
+        filename (str, optional): 要保存的文件名，默认为 'random_walk.txt'。
+    """
     with open(filename, 'w', encoding='utf-8') as file:
         file.write("\n".join(walk))
 
+
 def open_file_dialog():
+    """打开文件对话框，让用户选择文本文件，并读取文件内容构建有向图。"""
     global oriented_graph  # 声明全局变量
     file_path = filedialog.askopenfilename(
         title="选择文本文件",
@@ -210,7 +279,16 @@ def open_file_dialog():
         # 绘制有向图并保存为文件
         showDirectedGraph(oriented_graph)
 
+
 def query_bridge_words(oriented_graph, entry_word1, entry_word2, result_text):
+    """根据用户输入的两个单词，查询它们之间的桥接词。
+
+    参数:
+        oriented_graph (dict): 构建好的有向图。
+        entry_word1 (tk.Entry): 第一个单词的输入框。
+        entry_word2 (tk.Entry): 第二个单词的输入框。
+        result_text (tk.StringVar): 用于显示结果的文本变量。
+    """
     word1 = entry_word1.get().lower()
     word2 = entry_word2.get().lower()
     if word1 and word2:
@@ -221,12 +299,20 @@ def query_bridge_words(oriented_graph, entry_word1, entry_word2, result_text):
             result_text.set(f"No bridge words from {word1} to {word2}!")
         else:
             bridge_words_str = ", ".join(bridge_words)
-            result_text.set(f"The bridge words from {word1} to {word2} are: {bridge_words_str}")
+            result_text.set(
+                f"The bridge words from {word1} to {word2} are: {bridge_words_str}")
     else:
         result_text.set("请输入单词！")
 
 
 def generate_new_text(oriented_graph, entry_new_text, result_text):
+    """根据用户输入的新文本和有向图生成新的文本。
+
+    参数:
+        oriented_graph (dict): 构建好的有向图。
+        entry_new_text (tk.Entry): 用户输入的新文本。
+        result_text (tk.StringVar): 用于显示结果的文本变量。
+    """
     new_text = entry_new_text.get()
     if new_text:
         result = generateNewText(oriented_graph, new_text)
@@ -235,13 +321,23 @@ def generate_new_text(oriented_graph, entry_new_text, result_text):
         result_text.set("请输入内容！")
 
 
-def calc_shortest_path(oriented_graph, entry_word1_shortest, entry_word2_shortest, result_text_shortest):
+def calc_shortest_path(oriented_graph, entry_word1_shortest,
+                       entry_word2_shortest, result_text_shortest):
+    """计算有向图中两个单词之间的最短路径。
+
+    参数:
+        oriented_graph (dict): 构建好的有向图。
+        entry_word1_shortest (tk.Entry): 起始单词的输入框。
+        entry_word2_shortest (tk.Entry): 目标单词的输入框。
+        result_text_shortest (tk.StringVar): 用于显示最短路径结果的文本变量。
+    """
     word1 = entry_word1_shortest.get().lower()
     word2 = entry_word2_shortest.get().lower()
     if word1 and word2:
         shortest_path = calcShortestPath(oriented_graph, word1, word2)
         if shortest_path:
-            result_text_shortest.set(f"最短路径为: {' '.join(shortest_path)}, 长度为: {len(shortest_path)}")
+            result_text_shortest.set(
+                f"最短路径为: {' '.join(shortest_path)}, 长度为: {len(shortest_path)}")
         elif shortest_path is None:
             result_text_shortest.set(f"错误：单词 '{word1}' 和 '{word2}' 不可达。")
         else:
@@ -251,6 +347,12 @@ def calc_shortest_path(oriented_graph, entry_word1_shortest, entry_word2_shortes
 
 
 def random_walk(oriented_graph, result_text_walk):
+    """在有向图上执行随机游走，并展示游走路径。
+
+    参数:
+        oriented_graph (dict): 构建好的有向图。
+        result_text_walk (tk.StringVar): 用于显示随机游走路径的文本变量。
+    """
     if oriented_graph:
         walk = randomWalk(oriented_graph)
         result_text_walk.set("随机游走路径：" + " -> ".join(walk))
@@ -260,6 +362,7 @@ def random_walk(oriented_graph, result_text_walk):
 
 
 def main():
+    """创建图形用户界面，启动主事件循环。"""
     global oriented_graph  # 声明全局变量
     # 创建主窗口
     root = tk.Tk()
@@ -286,7 +389,8 @@ def main():
     entry_word2.grid(row=0, column=3)
 
     button_query = tk.Button(frame_query, text="查询桥接词",
-                             command=lambda: query_bridge_words(oriented_graph, entry_word1, entry_word2, result_word))
+                             command=lambda: query_bridge_words(oriented_graph, entry_word1,
+                                                                entry_word2, result_word))
     button_query.grid(row=0, column=4)
 
     result_word = tk.StringVar()
@@ -304,7 +408,8 @@ def main():
     entry_new_text.grid(row=0, column=1)
 
     button_generate = tk.Button(frame_generate, text="生成新文本",
-                                command=lambda: generate_new_text(oriented_graph, entry_new_text, result_text))
+                                command=lambda: generate_new_text(oriented_graph,
+                                                                  entry_new_text, result_text))
     button_generate.grid(row=0, column=2)
 
     result_text = tk.StringVar()
@@ -327,20 +432,26 @@ def main():
     entry_word2_shortest = tk.Entry(frame_shortest)
     entry_word2_shortest.grid(row=0, column=3)
 
-    button_shortest = tk.Button(frame_shortest, text="计算最短路径",
-                                command=lambda: calc_shortest_path(oriented_graph, entry_word1_shortest,
-                                                                   entry_word2_shortest, result_text_shortest))
+    button_shortest = tk.Button(
+        frame_shortest,
+        text="计算最短路径",
+        command=lambda: calc_shortest_path(oriented_graph, entry_word1_shortest,
+                                           entry_word2_shortest, result_text_shortest))
     button_shortest.grid(row=0, column=4)
 
     result_text_shortest = tk.StringVar()
-    result_label_shortest = tk.Label(frame_shortest, textvariable=result_text_shortest)
+    result_label_shortest = tk.Label(
+        frame_shortest, textvariable=result_text_shortest)
     result_label_shortest.grid(row=1, columnspan=5)
 
     # 创建随机游走的部分
     frame_walk = tk.Frame(root)
     frame_walk.pack(padx=10, pady=10)
 
-    button_walk = tk.Button(frame_walk, text="随机游走", command=lambda: random_walk(oriented_graph, result_text_walk))
+    button_walk = tk.Button(
+        frame_walk,
+        text="随机游走",
+        command=lambda: random_walk(oriented_graph, result_text_walk))
     button_walk.pack()
 
     result_text_walk = tk.StringVar()
@@ -349,7 +460,6 @@ def main():
 
     # 运行主循环
     root.mainloop()
-
 
 
 if __name__ == "__main__":
